@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overtone_2 — video</title>
+<style>
+  :root { color-scheme: light dark; }
+  html, body { margin: 0; height: 100%; background: #111; color: #eee;
+    font: 15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  .wrap { min-height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
+  video { max-width: 100%; max-height: 82vh; background: #000; border-radius: 8px; }
+  .name { font-size: 13px; color: #aaa; word-break: break-all; text-align: center; }
+  .dl { font-size: 13px; }
+  .dl a { color: #6db3ff; }
+  .err { max-width: 32rem; text-align: center; color: #ffb4b4; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+  // Video assets live in this GitHub Release. The <video> element streams them
+  // inline (the release's Content-Disposition: attachment only affects direct
+  // navigation, not media subresource loads), and honors the rotation matrix.
+  var REL = "https://github.com/robbosenski/musgave26/releases/download/media-video-v1/";
+  var app = document.getElementById("app");
+  var v = new URLSearchParams(location.search).get("v") || "";
+
+  // Only allow our own filenames — prevents pointing the player at arbitrary URLs.
+  if (!/^VIDEO_[0-9]+\.mp4$/.test(v)) {
+    app.innerHTML = '<p class="err">No valid video specified. Open this page via a link from the map (it needs a <code>?v=VIDEO_&hellip;.mp4</code> parameter).</p>';
+  } else {
+    var src = REL + encodeURIComponent(v);
+    var vid = document.createElement("video");
+    vid.controls = true; vid.autoplay = true; vid.playsInline = true; vid.preload = "metadata";
+    vid.src = src;
+    var name = document.createElement("div"); name.className = "name"; name.textContent = v;
+    var dl = document.createElement("div"); dl.className = "dl";
+    var a = document.createElement("a"); a.href = src; a.textContent = "Download this video";
+    dl.appendChild(a);
+    app.appendChild(vid); app.appendChild(name); app.appendChild(dl);
+    document.title = v;
+  }
+</script>
+</body>
+</html>
