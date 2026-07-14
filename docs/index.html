@@ -45,21 +45,40 @@ const plan = L.imageOverlay('./overlay/siteplan.jpg', OVERLAY_BOUNDS, {opacity:0
 // --- layer groups ---
 const photos = L.layerGroup().addTo(map);
 const videos = L.layerGroup().addTo(map);
+const facing = L.layerGroup().addTo(map);   // camera view cones
 const track  = L.layerGroup().addTo(map);
 
 const esc = s => (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// destination point from (lat,lon) along a true bearing (deg) for distance (m)
+function dest(lat,lon,brg,d){
+  const b=brg*Math.PI/180;
+  return [lat+(d*Math.cos(b))/111320, lon+(d*Math.sin(b))/(111320*Math.cos(lat*Math.PI/180))];
+}
+// a view-cone (fan) polygon pointing the way the camera faced
+function cone(lat,lon,brg,R=35,fov=50){
+  const pts=[[lat,lon]];
+  for(let a=-fov/2;a<=fov/2;a+=fov/6) pts.push(dest(lat,lon,brg+a,R));
+  pts.push([lat,lon]);
+  return pts;
+}
 
 fetch('./data/media.json').then(r=>r.json()).then(items=>{
   const pts=[];
   items.forEach(f=>{
     pts.push([f.lat,f.lon]);
     if(f.type==='photo'){
+      const facingTxt = (f.dir!=null) ? `<br>Facing ~${f.dir}° (true N)` : '';
       const html=`<div class="pv"><a href="${f.full}" target="_blank" rel="noopener">`+
         `<img src="${f.thumb}" loading="lazy" alt=""></a>`+
-        `<div class="cap"><b>${esc(f.name)}</b><br>${esc(f.ts)} · `+
+        `<div class="cap"><b>${esc(f.name)}</b><br>${esc(f.ts)}${facingTxt} · `+
         `<a href="${f.full}" target="_blank" rel="noopener">full photo</a></div></div>`;
       L.circleMarker([f.lat,f.lon],{radius:5,color:'#fff',weight:1,fillColor:'#ffcc00',fillOpacity:.95})
         .bindPopup(html,{maxWidth:320}).addTo(photos);
+      if(f.dir!=null){
+        L.polygon(cone(f.lat,f.lon,f.dir),{stroke:true,color:'#ffcc00',weight:1,
+          fillColor:'#ffcc00',fillOpacity:.28}).addTo(facing);
+      }
     }else{
       const html=`<div class="pv"><video controls playsinline preload="none" poster="${f.thumb}">`+
         `<source src="${f.full}" type="video/mp4"></video>`+
@@ -80,7 +99,7 @@ fetch('./data/track.geojson').then(r=>r.json()).then(gj=>{
 // --- Leaflet layer control ---
 L.control.layers(
   {'Satellite':sat},
-  {'Place labels':labels,'Site plan':plan,'Photos':photos,'Videos':videos,'GPS track':track},
+  {'Place labels':labels,'Site plan':plan,'Photos':photos,'Facing (view cones)':facing,'Videos':videos,'GPS track':track},
   {collapsed:false}
 ).addTo(map);
 
@@ -91,7 +110,7 @@ info.onAdd=function(){
   d.innerHTML=`<h4>Overtone · OT26-GC</h4>
     <label>Site plan opacity <input id="op" type="range" min="0" max="1" step="0.05" value="0.75"></label>
     <div style="margin-top:6px">
-      <label><span class="sw" style="background:#ffcc00"></span> Photos</label>
+      <label><span class="sw" style="background:#ffcc00"></span> Photos <span class="muted">(cone = facing)</span></label>
       <label><span class="sw" style="background:#e5484d"></span> Videos (play inline)</label>
       <label><span class="sw" style="background:#22d3ee;border-radius:2px"></span> GPS track</label>
     </div>
