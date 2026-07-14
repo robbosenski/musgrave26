@@ -31,6 +31,15 @@ const OVERLAY_BOUNDS = [[-27.9590692,153.3882227],[-27.9551602,153.3944824]]; //
 const map = L.map('map',{zoomControl:true});
 L.control.scale({imperial:false}).addTo(map);
 
+// Stacking: cones (decor, non-clickable) < video dots < photo dots (always on top)
+map.createPane('conePane');  map.getPane('conePane').style.zIndex=406;
+map.getPane('conePane').style.pointerEvents='none';
+map.createPane('videoPane'); map.getPane('videoPane').style.zIndex=407;
+map.createPane('photoPane'); map.getPane('photoPane').style.zIndex=408;
+const coneR  = L.svg({pane:'conePane'});
+const videoR = L.svg({pane:'videoPane'});
+const photoR = L.svg({pane:'photoPane'});
+
 // --- basemap (Esri World Imagery) ---
 const sat = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -73,10 +82,10 @@ fetch('./data/media.json').then(r=>r.json()).then(items=>{
         `<img src="${f.thumb}" loading="lazy" alt=""></a>`+
         `<div class="cap"><b>${esc(f.name)}</b><br>${esc(f.ts)}${facingTxt} · `+
         `<a href="${f.full}" target="_blank" rel="noopener">full photo</a></div></div>`;
-      L.circleMarker([f.lat,f.lon],{radius:5,color:'#fff',weight:1,fillColor:'#ffcc00',fillOpacity:.95})
+      L.circleMarker([f.lat,f.lon],{renderer:photoR,radius:5,color:'#fff',weight:1,fillColor:'#ffcc00',fillOpacity:.95})
         .bindPopup(html,{maxWidth:320}).addTo(photos);
       if(f.dir!=null){
-        L.polygon(cone(f.lat,f.lon,f.dir),{stroke:false,
+        L.polygon(cone(f.lat,f.lon,f.dir),{renderer:coneR,interactive:false,stroke:false,
           fillColor:'#ffcc00',fillOpacity:.12}).addTo(facing);
       }
     }else{
@@ -84,7 +93,7 @@ fetch('./data/media.json').then(r=>r.json()).then(items=>{
         `<source src="${f.full}" type="video/mp4"></video>`+
         `<div class="cap"><b>${esc(f.name)}</b><br>${esc(f.ts)} · `+
         `<a href="${f.full}" target="_blank" rel="noopener">open / download</a></div></div>`;
-      L.circleMarker([f.lat,f.lon],{radius:6,color:'#fff',weight:1,fillColor:'#e5484d',fillOpacity:.95})
+      L.circleMarker([f.lat,f.lon],{renderer:videoR,radius:6,color:'#fff',weight:1,fillColor:'#e5484d',fillOpacity:.95})
         .bindPopup(html,{maxWidth:340,minWidth:300}).addTo(videos);
     }
   });
