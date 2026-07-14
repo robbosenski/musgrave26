@@ -56,7 +56,7 @@ function dest(lat,lon,brg,d){
   return [lat+(d*Math.cos(b))/111320, lon+(d*Math.sin(b))/(111320*Math.cos(lat*Math.PI/180))];
 }
 // a view-cone (fan) polygon pointing the way the camera faced
-function cone(lat,lon,brg,R=35,fov=50){
+function cone(lat,lon,brg,R=7,fov=50){
   const pts=[[lat,lon]];
   for(let a=-fov/2;a<=fov/2;a+=fov/6) pts.push(dest(lat,lon,brg+a,R));
   pts.push([lat,lon]);
@@ -76,8 +76,8 @@ fetch('./data/media.json').then(r=>r.json()).then(items=>{
       L.circleMarker([f.lat,f.lon],{radius:5,color:'#fff',weight:1,fillColor:'#ffcc00',fillOpacity:.95})
         .bindPopup(html,{maxWidth:320}).addTo(photos);
       if(f.dir!=null){
-        L.polygon(cone(f.lat,f.lon,f.dir),{stroke:true,color:'#ffcc00',weight:1,
-          fillColor:'#ffcc00',fillOpacity:.28}).addTo(facing);
+        L.polygon(cone(f.lat,f.lon,f.dir),{stroke:false,
+          fillColor:'#ffcc00',fillOpacity:.12}).addTo(facing);
       }
     }else{
       const html=`<div class="pv"><video controls playsinline preload="none" poster="${f.thumb}">`+
