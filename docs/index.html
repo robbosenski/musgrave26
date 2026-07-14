@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Overtone OT26-GC — site map</title>
 <link rel="stylesheet" href="./vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="./vendor/markercluster/MarkerCluster.css">
+<link rel="stylesheet" href="./vendor/markercluster/MarkerCluster.Default.css">
 <style>
   html,body{margin:0;height:100%}
   #map{position:absolute;inset:0}
@@ -20,11 +22,15 @@
   .ctl input[type=range]{width:100%}
   .sw{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid #0006}
   .muted{color:#aaa;font-size:11px}
+  .pdot{width:11px;height:11px;border-radius:50%;background:#ffcc00;border:1.5px solid #fff;box-shadow:0 0 2px #0007}
+  .pcl{width:30px;height:30px;border-radius:50%;background:rgba(255,204,0,.92);border:2px solid #fff;
+       display:flex;align-items:center;justify-content:center;font:bold 12px system-ui;color:#222;box-shadow:0 0 4px #0007}
 </style>
 </head>
 <body>
 <div id="map"></div>
 <script src="./vendor/leaflet/leaflet.js"></script>
+<script src="./vendor/markercluster/leaflet.markercluster.js"></script>
 <script>
 const OVERLAY_BOUNDS = [[-27.9590692,153.3882227],[-27.9551602,153.3944824]]; // [S,W],[N,E]
 
@@ -68,7 +74,11 @@ const labels = L.tileLayer(
 const plan = L.imageOverlay('./overlay/siteplan.jpg', OVERLAY_BOUNDS, {opacity:0.75}).addTo(map);
 
 // --- layer groups ---
-const photos = L.layerGroup().addTo(map);
+const PHOTO_ICON = L.divIcon({className:'',iconSize:[13,13],iconAnchor:[6.5,6.5],html:'<div class="pdot"></div>'});
+const photos = L.markerClusterGroup({
+  maxClusterRadius:24, showCoverageOnHover:false, spiderfyDistanceMultiplier:1.8,
+  iconCreateFunction:c=>L.divIcon({className:'',iconSize:[30,30],html:`<div class="pcl">${c.getChildCount()}</div>`})
+}).addTo(map);
 const videos = L.layerGroup().addTo(map);
 const facing = L.layerGroup().addTo(map);   // camera view cones
 const track  = L.layerGroup().addTo(map);
@@ -100,7 +110,7 @@ fetch('./data/media.json').then(r=>r.json()).then(items=>{
           `<div class="cap"><b>${esc(f.name)}</b><br>${esc(f.ts)}${facingTxt} · `+
           `<a href="${f.full}" target="_blank" rel="noopener">full photo</a></div></div>`;
       };
-      const pm=L.circleMarker([f.lat,f.lon],{renderer:photoR,radius:5,color:'#fff',weight:1,fillColor:'#ffcc00',fillOpacity:.95}).addTo(photos);
+      const pm=L.marker([f.lat,f.lon],{icon:PHOTO_ICON}).addTo(photos);
       pm.on('click',()=>{
         if(fixMode && f.dir!=null) toggleFlip(f);
         else L.popup({maxWidth:320}).setLatLng([f.lat,f.lon]).setContent(photoHtml()).openOn(map);
